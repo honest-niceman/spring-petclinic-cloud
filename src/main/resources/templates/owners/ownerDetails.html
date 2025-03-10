@@ -7,18 +7,8 @@
   
   
     <h2>Owner Information</h2>
-
-    <div th:if="${message}" class="alert alert-success" id="success-message">
-      <span th:text="${message}"></span>
-    </div>
-
-    <div th:if="${error}" class="alert alert-danger" id="error-message">
-      <span th:text="${error}"></span>
-    </div>
-
-
-
-
+  
+  
     <table class="table table-striped" th:object="${owner}">
       <tr>
         <th>Name</th>
@@ -68,11 +58,13 @@
               <tr>
                 <th>Visit Date</th>
                 <th>Description</th>
+                <th>Vet</th>
               </tr>
             </thead>
             <tr th:each="visit : ${pet.visits}">
               <td th:text="${#temporals.format(visit.date, 'yyyy-MM-dd')}"></td>
               <td th:text="${visit?.description}"></td>
+              <td th:text="${visit?.vet?.firstName + ' ' + visit?.vet?.lastName}"></td>
             </tr>
             <tr>
               <td><a th:href="@{__${owner.id}__/pets/__${pet.id}__/edit}">Edit Pet</a></td>
@@ -83,20 +75,7 @@
       </tr>
   
     </table>
-    <script>
-    // Function to hide the success and error messages after 3 seconds
-    function hideMessages() {
-        setTimeout(function() {
-            document.getElementById("success-message").style.display = "none";
-            document.getElementById("error-message").style.display = "none";
-        }, 3000); // 3000 milliseconds (3 seconds)
-    }
-
-    // Call the function to hide messages
-    hideMessages();
-</script>
-
+  
   </body>
-
 
 </html>

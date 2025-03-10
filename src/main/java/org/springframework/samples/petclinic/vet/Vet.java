@@ -15,21 +15,19 @@
  */
 package org.springframework.samples.petclinic.vet;
 
-import java.util.Comparator;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.springframework.samples.petclinic.model.NamedEntity;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.PositiveOrZero;
+import org.springframework.beans.support.MutableSortDefinition;
+import org.springframework.beans.support.PropertyComparator;
 import org.springframework.samples.petclinic.model.Person;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlElement;
 
 /**
@@ -49,6 +47,18 @@ public class Vet extends Person {
 			inverseJoinColumns = @JoinColumn(name = "specialty_id"))
 	private Set<Specialty> specialties;
 
+	@PositiveOrZero(message = "The salary must be greater than or equal to 0")
+	@Column(name = "salary", precision = 19, scale = 2)
+	private BigDecimal salary;
+
+	public BigDecimal getSalary() {
+		return salary;
+	}
+
+	public void setSalary(BigDecimal salary) {
+		this.salary = salary;
+	}
+
 	protected Set<Specialty> getSpecialtiesInternal() {
 		if (this.specialties == null) {
 			this.specialties = new HashSet<>();
@@ -56,11 +66,15 @@ public class Vet extends Person {
 		return this.specialties;
 	}
 
+	protected void setSpecialtiesInternal(Set<Specialty> specialties) {
+		this.specialties = specialties;
+	}
+
 	@XmlElement
 	public List<Specialty> getSpecialties() {
-		return getSpecialtiesInternal().stream()
-			.sorted(Comparator.comparing(NamedEntity::getName))
-			.collect(Collectors.toList());
+		List<Specialty> sortedSpecs = new ArrayList<>(getSpecialtiesInternal());
+		PropertyComparator.sort(sortedSpecs, new MutableSortDefinition("name", true, true));
+		return Collections.unmodifiableList(sortedSpecs);
 	}
 
 	public int getNrOfSpecialties() {

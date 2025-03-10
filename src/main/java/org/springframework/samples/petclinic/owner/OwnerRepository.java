@@ -15,14 +15,16 @@
  */
 package org.springframework.samples.petclinic.owner;
 
-import java.util.List;
-import java.util.Optional;
-
-import jakarta.annotation.Nonnull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.ListCrudRepository;
+import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * Repository class for <code>Owner</code> domain objects All method names are compliant
@@ -34,15 +36,15 @@ import org.springframework.data.jpa.repository.Query;
  * @author Juergen Hoeller
  * @author Sam Brannen
  * @author Michael Isvy
- * @author Wick Dynex
  */
-public interface OwnerRepository extends JpaRepository<Owner, Integer> {
+public interface OwnerRepository extends Repository<Owner, Integer>, ListCrudRepository<Owner, Integer>, JpaSpecificationExecutor<Owner> {
 
 	/**
 	 * Retrieve all {@link PetType}s from the data store.
 	 * @return a Collection of {@link PetType}s.
 	 */
 	@Query("SELECT ptype FROM PetType ptype ORDER BY ptype.name")
+	@Transactional(readOnly = true)
 	List<PetType> findPetTypes();
 
 	/**
@@ -52,26 +54,27 @@ public interface OwnerRepository extends JpaRepository<Owner, Integer> {
 	 * @return a Collection of matching {@link Owner}s (or an empty Collection if none
 	 * found)
 	 */
-	Page<Owner> findByLastNameStartingWith(String lastName, Pageable pageable);
+
+	@Query("SELECT DISTINCT owner FROM Owner owner left join  owner.pets WHERE owner.lastName LIKE :lastName% ")
+	@Transactional(readOnly = true)
+	Page<Owner> findByLastName(@Param("lastName") String lastName, Pageable pageable);
 
 	/**
 	 * Retrieve an {@link Owner} from the data store by id.
-	 * <p>
-	 * This method returns an {@link Optional} containing the {@link Owner} if found. If
-	 * no {@link Owner} is found with the provided id, it will return an empty
-	 * {@link Optional}.
-	 * </p>
 	 * @param id the id to search for
-	 * @return an {@link Optional} containing the {@link Owner} if found, or an empty
-	 * {@link Optional} if not found.
-	 * @throws IllegalArgumentException if the id is null (assuming null is not a valid
-	 * input for id)
+	 * @return the {@link Owner} if found
 	 */
-	Optional<Owner> findById(@Nonnull Integer id);
+	@Query("SELECT owner FROM Owner owner left join fetch owner.pets WHERE owner.id =:id")
+	@Transactional(readOnly = true)
+	Owner findByIdCustom(@Param("id") Integer id);
 
 	/**
 	 * Returns all the owners from data store
 	 **/
+	@Query("SELECT owner FROM Owner owner")
+	@Transactional(readOnly = true)
 	Page<Owner> findAll(Pageable pageable);
 
+    Page<Owner> findByLastNameStartingWith(String lastName,
+                                           Pageable pageable);
 }

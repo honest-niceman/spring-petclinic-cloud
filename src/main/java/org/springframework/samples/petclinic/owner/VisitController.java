@@ -16,8 +16,9 @@
 package org.springframework.samples.petclinic.owner;
 
 import java.util.Map;
-import java.util.Optional;
 
+import org.springframework.samples.petclinic.vet.Vet;
+import org.springframework.samples.petclinic.vet.VetAutoAssignmentService;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -28,7 +29,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import jakarta.validation.Valid;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
  * @author Juergen Hoeller
@@ -36,15 +36,22 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  * @author Arjen Poutsma
  * @author Michael Isvy
  * @author Dave Syer
- * @author Wick Dynex
  */
 @Controller
 class VisitController {
 
 	private final OwnerRepository owners;
 
-	public VisitController(OwnerRepository owners) {
+	private final PetRepository petRepository;
+
+	private final VetAutoAssignmentService vetAutoAssignmentService;
+
+	public VisitController(OwnerRepository owners,
+						   PetRepository petRepository,
+						   VetAutoAssignmentService vetAutoAssignmentService) {
 		this.owners = owners;
+		this.petRepository = petRepository;
+		this.vetAutoAssignmentService = vetAutoAssignmentService;
 	}
 
 	@InitBinder
@@ -62,9 +69,7 @@ class VisitController {
 	@ModelAttribute("visit")
 	public Visit loadPetWithVisit(@PathVariable("ownerId") int ownerId, @PathVariable("petId") int petId,
 			Map<String, Object> model) {
-		Optional<Owner> optionalOwner = owners.findById(ownerId);
-		Owner owner = optionalOwner.orElseThrow(() -> new IllegalArgumentException(
-				"Owner not found with id: " + ownerId + ". Please ensure the ID is correct "));
+		Owner owner = this.owners.findByIdCustom(ownerId);
 
 		Pet pet = owner.getPet(petId);
 		model.put("pet", pet);
@@ -86,14 +91,17 @@ class VisitController {
 	// called
 	@PostMapping("/owners/{ownerId}/pets/{petId}/visits/new")
 	public String processNewVisitForm(@ModelAttribute Owner owner, @PathVariable int petId, @Valid Visit visit,
-			BindingResult result, RedirectAttributes redirectAttributes) {
+			BindingResult result) {
 		if (result.hasErrors()) {
 			return "pets/createOrUpdateVisitForm";
 		}
 
+		Pet pet = petRepository.getReferenceById(petId);
+		Vet vet = vetAutoAssignmentService.findAppropriateVet(pet);
+		visit.setVet(vet);
+
 		owner.addVisit(petId, visit);
 		this.owners.save(owner);
-		redirectAttributes.addFlashAttribute("message", "Your visit has been booked");
 		return "redirect:/owners/{ownerId}";
 	}
 

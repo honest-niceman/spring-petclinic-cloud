@@ -30,7 +30,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -41,14 +41,12 @@ import jakarta.validation.constraints.NotBlank;
  * @author Sam Brannen
  * @author Michael Isvy
  * @author Oliver Drotbohm
- * @author Wick Dynex
  */
 @Entity
 @Table(name = "owners")
 public class Owner extends Person {
 
 	@Column(name = "address")
-	@NotBlank
 	private String address;
 
 	@Column(name = "city")
@@ -57,13 +55,12 @@ public class Owner extends Person {
 
 	@Column(name = "telephone")
 	@NotBlank
-	@Pattern(regexp = "\\d{10}", message = "Telephone must be a 10-digit number")
 	private String telephone;
 
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	@JoinColumn(name = "owner_id")
 	@OrderBy("name")
-	private final List<Pet> pets = new ArrayList<>();
+	private List<Pet> pets = new ArrayList<>();
 
 	public String getAddress() {
 		return this.address;
@@ -102,7 +99,7 @@ public class Owner extends Person {
 	/**
 	 * Return the Pet with the given name, or null if none found for this Owner.
 	 * @param name to test
-	 * @return the Pet with the given name, or null if no such Pet exists for this Owner
+	 * @return a pet if pet name is already in use
 	 */
 	public Pet getPet(String name) {
 		return getPet(name, false);
@@ -111,7 +108,7 @@ public class Owner extends Person {
 	/**
 	 * Return the Pet with the given id, or null if none found for this Owner.
 	 * @param id to test
-	 * @return the Pet with the given id, or null if no such Pet exists for this Owner
+	 * @return a pet if pet id is already in use
 	 */
 	public Pet getPet(Integer id) {
 		for (Pet pet : getPets()) {
@@ -128,10 +125,10 @@ public class Owner extends Person {
 	/**
 	 * Return the Pet with the given name, or null if none found for this Owner.
 	 * @param name to test
-	 * @param ignoreNew whether to ignore new pets (pets that are not saved yet)
-	 * @return the Pet with the given name, or null if no such Pet exists for this Owner
+	 * @return a pet if pet name is already in use
 	 */
 	public Pet getPet(String name, boolean ignoreNew) {
+		name = name.toLowerCase();
 		for (Pet pet : getPets()) {
 			String compName = pet.getName();
 			if (compName != null && compName.equalsIgnoreCase(name)) {
