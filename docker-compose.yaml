@@ -4,7 +4,7 @@ services:
     build:
       context: .
       args:
-        DOCKER_BUILDKIT: 1
+        DOCKER_BUILDKIT: ${DOCKER_BUILDKIT}
     restart: always
     ports:
       - "8080:80"
