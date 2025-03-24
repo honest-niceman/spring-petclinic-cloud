@@ -23,8 +23,6 @@ services:
   postgres:
     image: postgres:17.2
     restart: always
-    volumes:
-      - ./src/main/resources/db/postgres:/docker-entrypoint-initdb.d:ro
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
